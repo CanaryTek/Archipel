@@ -283,7 +283,7 @@ if __name__ == "__main__":
                         help="Generate the EGGS",
                         action="store_true",
                         default=False)
-    parser.add_option("-B", "--buildprms",
+    parser.add_option("-B", "--buildrpms",
                         dest="build_rpms",
                         help="Generate the RPMS",
                         action="store_true",
