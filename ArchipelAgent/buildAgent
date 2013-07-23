@@ -171,6 +171,12 @@ def generate_rpms(package_paths):
             error("Unable to build RPM package %s" % os.path.basename(package_path))
         os.chdir("..")
 
+    """
+    Build additional packages
+    """
+    build_apscheduler_rpm("./")
+    build_sqlalchemy_rpm("./")
+
 def export_eggs(repo_path, package_paths, export_path=None):
     """
     Export all generated EGGS in custom folder
@@ -219,7 +225,17 @@ def export_rpms(repo_path, package_paths, export_path=None):
             success("Package %s copied to %s/SRPMS" % (os.path.basename(package_path), export_path))
         else:
             error("Unable to copy %s to %s/SRPMS" % (os.path.basename(package_path), export_path))
-
+    """
+    Export additional packages
+    """
+    if os.system("cp -a ./*src.rpm %s/SRPMS" % (export_path)) == 0:
+       success("Additional packages copied to %s/SRPMS" % (export_path))
+    if os.system("cp -a ./*x86_64.rpm %s/RPMS" % (export_path)) == 0:
+       success("Additional x86_64 packages copied to %s/RPMS" % (export_path))
+    if os.system("cp -a ./*86.rpm %s/RPMS" % (export_path)) == 0:
+       success("Additional i686 packages copied to %s/RPMS" % (export_path))
+    if os.system("cp -a ./*noarch.rpm %s/RPMS" % (export_path)) == 0:
+       success("Additional noarch packages copied to %s/RPMS" % (export_path))
 
 def uninstall():
     """
@@ -256,7 +272,7 @@ def build_apscheduler_rpm(export_path):
     """
     apscheduler_url = "http://pypi.python.org/packages/source/A/APScheduler/APScheduler-2.0.2.tar.gz"
     msg("Downloading the APScheduler source from pypi")
-    if os.system("cd /tmp && wget %s" % apscheduler_url):
+    if os.system("cd /tmp && wget --no-check-certificate %s" % apscheduler_url):
         error("Unable to download APScheduler source from %s" %apscheduler_url)
     success("APScheduler source downloaded")
     msg("Untaring the source")
@@ -271,6 +287,31 @@ def build_apscheduler_rpm(export_path):
     if os.system("cp /tmp/APScheduler-2.0.2/dist/*rpm '%s'" % export_path):
         error("Unable to copy the RPM to repo path %s" % export_path)
     success("APScheduler RPM ready")
+
+def build_sqlalchemy_rpm(export_path):
+    """
+    Build the SQLAlchemy RPM
+    @type export_path: String
+    @param export_path: the path where to copy the RPM after build
+    """
+    pkg_url = "http://pypi.python.org/packages/source/S/SQLAlchemy/SQLAlchemy-0.8.2.tar.gz"
+    msg("Downloading the SQLAlchemy source from pypi")
+    if os.system("cd /tmp && wget --no-check-certificate %s" % pkg_url):
+        error("Unable to download SQLAlchemy source from %s" %pkg_url)
+    success("AQLAlchemy source downloaded")
+    msg("Untaring the source")
+    if os.system("cd /tmp && tar -xzf SQLAlchemy-0.8.2.tar.gz"):
+        error("Unable to untar the source tar")
+    success("Source untared")
+    msg("Building the RPM")
+    if os.system("cd /tmp/SQLAlchemy-0.8.2 && python setup.py bdist_rpm"):
+        error("Unable to build the RPM")
+    success("RPM Built")
+    msg("Copying RPMS to %s" % export_path)
+    if os.system("cp /tmp/SQLAlchemy-0.8.2/dist/*rpm '%s'" % export_path):
+        error("Unable to copy the RPM to repo path %s" % export_path)
+    success("SQLAlchemy RPM ready")
+
 
 def build_live_cd():
     """
@@ -362,7 +403,7 @@ if __name__ == "__main__":
                         help="Generate the EGGS",
                         action="store_true",
                         default=False)
-    parser.add_option("-B", "--buildprms",
+    parser.add_option("-B", "--buildrpms",
                         dest="build_rpms",
                         help="Generate the RPMS",
                         action="store_true",
